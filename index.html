@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Parts Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #1a1d23;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+    --input-bg: #ffffff;
+    --chart-grid: #e5e7eb;
+  }
+  [data-theme="dark"] {
+    --bg: #0f1115;
+    --card: #1a1d24;
+    --text: #e8eaed;
+    --muted: #9ca3af;
+    --border: #2a2f3a;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --success: #34d399;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.6);
+    --input-bg: #232730;
+    --chart-grid: #2a2f3a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.2s, color 0.2s;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .header-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+  .theme-toggle {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { background: var(--border); transform: scale(1.05); }
+
+  /* Vehicle selector bar */
+  .vehicle-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .vehicle-select {
+    flex: 1;
+    min-width: 200px;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+
+  .car-make-row { margin-bottom: 20px; }
+  .car-make-row input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 8px 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
+    font-family: inherit;
+    border-radius: 8px;
+    transition: background 0.15s, border 0.15s;
+  }
+  .car-make-row input::placeholder { color: var(--muted); font-weight: 400; opacity: 0.8; }
+  .car-make-row input:hover { background: var(--card); border-color: var(--border); }
+  .car-make-row input:focus {
+    outline: none;
+    background: var(--card);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .mileage-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .mileage-box label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .mileage-box input {
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    padding: 2px 4px;
+    width: 110px;
+    font-family: inherit;
+  }
+  .mileage-box input:focus { outline: none; background: var(--input-bg); border-radius: 4px; }
+  .mileage-box select {
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: auto;
+    font-family: inherit;
+  }
+  .mileage-box select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { opacity: 0.9; }
+  .btn-icon {
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  .btn-icon:hover { background: var(--border); color: var(--text); }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .card h2 { margin: 0 0 16px; font-size: 1.1rem; font-weight: 600; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  input, select {
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+  .qty-combo {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--input-bg);
+    width: 100%;
+  }
+  .qty-combo:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .qty-combo button {
+    background: var(--input-bg);
+    color: var(--text);
+    border: none;
+    padding: 0;
+    width: 32px;
+    border-radius: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .qty-combo button:hover { background: var(--border); }
+  .qty-combo button:active { transform: scale(0.95); }
+  .qty-combo input {
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-radius: 0;
+    text-align: center;
+    padding: 8px 4px;
+    font-weight: 600;
+    background: transparent;
+    width: 48px;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+  .qty-combo input:focus { outline: none; box-shadow: none; background: rgba(59,130,246,0.05); }
+  .qty-combo input::-webkit-outer-spin-button,
+  .qty-combo input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .qty-combo input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .qty-combo .combo-select {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 24px 0 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    color: var(--text);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .qty-combo .combo-select:focus { outline: none; box-shadow: none; }
+  .qty-combo .combo-custom {
+    border: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: 90px;
+    flex-shrink: 0;
+    background: transparent;
+    display: none;
+  }
+  .qty-combo.custom-active .combo-custom { display: block; }
+  .qty-combo.custom-active .combo-select { flex: 0 0 auto; width: 70px; }
+  .qty-combo .combo-custom:focus { outline: none; box-shadow: none; }
+
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .toolbar input, .toolbar select { flex: 1; min-width: 140px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 10px; text-align: left; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+  th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid var(--border);
+  }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(59,130,246,0.04); }
+  tbody tr:last-child td { border-bottom: none; }
+  tr.overdue { background: rgba(239,68,68,0.08); }
+  tr.due { background: rgba(245,158,11,0.08); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge-ok { background: rgba(16,185,129,0.15); color: var(--success); }
+  .badge-due { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .badge-overdue { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  .part-name { font-weight: 600; }
+  .part-brand { color: var(--muted); font-size: 0.8rem; }
+  .part-qty {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(59,130,246,0.1);
+    padding: 2px 7px;
+    border-radius: 6px;
+  }
+  .part-shop { font-size: 0.78rem; color: var(--muted); }
+  .muted { color: var(--muted); }
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+
+  .row-actions { display: flex; gap: 2px; justify-content: flex-end; }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 2;
+    border-radius: 16px 16px 0 0;
+  }
+  .modal-header h3 { margin: 0; font-size: 1.15rem; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    position: sticky;
+    bottom: 0;
+    background: var(--card);
+    border-radius: 0 0 16px 16px;
+  }
+
+  .summary-card { margin-top: 4px; margin-bottom: 0; }
+  .summary-status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .status-tile { text-align: center; padding: 14px 10px; border-radius: 10px; }
+  .status-tile .num { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+  .status-tile .lbl {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .tile-ok { background: rgba(16,185,129,0.1); }
+  .tile-ok .num { color: var(--success); }
+  .tile-due { background: rgba(245,158,11,0.1); }
+  .tile-due .num { color: var(--warning); }
+  .tile-overdue { background: rgba(239,68,68,0.1); }
+  .tile-overdue .num { color: var(--danger); }
+
+  .summary-subhead {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.92rem;
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row.total {
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding-top: 16px;
+    margin-top: 8px;
+    border-top: 2px solid var(--border);
+    border-bottom: none;
+  }
+  .summary-footer {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .import-area {
+    width: 100%;
+    min-height: 120px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    resize: vertical;
+  }
+
+  /* Charts */
+  .chart-controls { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chart-controls button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+  }
+  .chart-controls button.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .chart-container { position: relative; height: 260px; width: 100%; }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 100%;
+    gap: 6px;
+    padding: 20px 0 30px;
+    border-bottom: 1px solid var(--chart-grid);
+    position: relative;
+  }
+  .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+  .bar {
+    width: 100%;
+    max-width: 50px;
+    background: linear-gradient(to top, var(--primary), var(--primary-hover));
+    border-radius: 4px 4px 0 0;
+    transition: height 0.4s ease;
+    position: relative;
+    min-height: 2px;
+  }
+  .bar:hover { filter: brightness(1.1); }
+  .bar-val {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 3px;
+    white-space: nowrap;
+  }
+  .bar-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .chart-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 20px;
+    font-size: 0.9rem;
+  }
+
+  /* Vehicle modal list */
+  .vehicle-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .vehicle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .vehicle-item:hover { border-color: var(--primary); }
+  .vehicle-item.active {
+    border-color: var(--primary);
+    background: rgba(59,130,246,0.08);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+  }
+  .vehicle-item .v-info { flex: 1; min-width: 0; }
+  .vehicle-item .v-name { font-weight: 600; }
+  .vehicle-item .v-meta { font-size: 0.78rem; color: var(--muted); }
+  .vehicle-item .v-check { color: var(--primary); font-weight: 700; font-size: 1.1rem; }
+
+  @media (max-width: 700px) {
+    table { font-size: 0.8rem; }
+    th, td { padding: 8px 6px; }
+    .hide-mobile { display: none; }
+    h1 { font-size: 1.3rem; }
+    .header-actions .btn-text { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🚗 Car Parts Tracker</h1>
+    <div class="header-actions">
+      <button class="btn-secondary" onclick="openVehicles()" title="Manage vehicles">🚙 <span class="btn-text">Vehicles</span></button>
+      <button class="btn-secondary" onclick="openImport()" title="Import data">📥 <span class="btn-text">Import</span></button>
+      <button class="btn-secondary" onclick="exportData()" title="Export data">📤 <span class="btn-text">Export</span></button>
+      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="vehicle-bar">
+    <select id="vehicleSelect" class="vehicle-select" onchange="switchVehicle(this.value)"></select>
+    <button class="btn-primary" onclick="openVehicles(true)" title="Add new vehicle">＋ <span class="btn-text">New Vehicle</span></button>
+  </div>
+
+  <div class="car-make-row">
+    <input id="carMake" type="text" placeholder="Nickname for this vehicle (e.g. Daily Driver)…" onchange="saveCarMake()">
+  </div>
+
+  <div class="top-bar">
+    <div class="mileage-box">
+      <label for="mileage">Mileage</label>
+      <input type="number" id="mileage" onchange="saveMileage()" placeholder="0">
+      <select id="unit" onchange="saveUnit()">
+        <option value="mi">mi</option>
+        <option value="km">km</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card" id="partFormCard">
+    <h2 id="formTitle">➕ Add New Part</h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Part Name *</label><input id="name" placeholder="e.g. Oil Filter"></div>
+      <div class="form-group"><label>Brand</label><input id="brand" placeholder="e.g. Denso"></div>
+      <div class="form-group"><label>Category</label>
+        <select id="category">
+          <option>Engine</option><option>Brakes</option><option>Filters</option><option>Suspension</option>
+          <option>Electrical</option><option>Tires</option><option>Fluids</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantity &amp; Unit</label>
+        <div class="qty-combo" id="qtyCombo">
+          <button type="button" onclick="adjustQty(-1)" title="Decrease">−</button>
+          <input id="quantity" type="number" value="1" min="1" step="1" onchange="validateQty()">
+          <button type="button" onclick="adjustQty(1)" title="Increase">+</button>
+          <select id="qtyUnit" class="combo-select" onchange="onQtyUnitChange()">
+            <option value="pcs">pcs</option><option value="liters">liters</option>
+            <option value="gallons">gallons</option><option value="__custom__">Custom…</option>
+          </select>
+          <input id="qtyUnitCustom" class="combo-custom" placeholder="type…">
+        </div>
+      </div>
+      <div class="form-group"><label>Install Date</label><input id="instDate" type="date"></div>
+      <div class="form-group"><label>Install Mileage</label><input id="instMileage" type="number" placeholder="e.g. 75000"></div>
+      <div class="form-group"><label>Next Due <span id="formUnitLabel">(mi)</span></label><input id="nextMileage" type="number" placeholder="e.g. 80000"></div>
+      <div class="form-group"><label>Next Due Date</label><input id="nextDate" type="date"></div>
+      <div class="form-group"><label>Shop / Mechanic</label><input id="shop" placeholder="e.g. Toyota Service Center"></div>
+      <div class="form-group"><label>Amount Paid (₱)</label><input id="cost" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+      <button class="btn-primary" id="submitBtn" onclick="submitPart()">Add Part</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Parts List</h2>
+    <div class="toolbar">
+      <input id="search" placeholder="🔍 Search name, brand, or shop..." oninput="render()">
+      <select id="filterCat" onchange="render()">
+        <option value="">All Categories</option>
+        <option>Engine</option><option>Brakes</option><option>Filters</option><option>Suspension</option>
+        <option>Electrical</option><option>Tires</option><option>Fluids</option><option>Other</option>
+      </select>
+      <select id="filterStatus" onchange="render()">
+        <option value="">All Status</option>
+        <option value="ok">OK</option><option value="due">Due Soon</option><option value="overdue">Overdue</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Part</th><th class="hide-mobile">Category</th><th class="hide-mobile">Qty</th>
+            <th>Installed</th><th>Next Due</th><th class="hide-mobile">Shop</th>
+            <th>Paid</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty" style="display:none;">No parts yet. Add your first part above! 🚀</div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="card">
+    <h2>📈 Spending Charts</h2>
+    <div class="chart-controls">
+      <button class="active" data-range="6" onclick="setChartRange(6, this)">Last 6 months</button>
+      <button data-range="12" onclick="setChartRange(12, this)">Last 12 months</button>
+      <button data-range="all" onclick="setChartRange('all', this)">All time</button>
+    </div>
+    <div class="chart-container" id="monthlyChart"></div>
+    <h4 class="summary-subhead" style="margin-top:24px;">By Category</h4>
+    <div class="chart-container" id="categoryChart" style="height:220px;"></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="card summary-card">
+    <h2>📊 Summary</h2>
+    <div class="summary-status-grid">
+      <div class="status-tile tile-ok"><div class="num" id="sumOk">0</div><div class="lbl">OK</div></div>
+      <div class="status-tile tile-due"><div class="num" id="sumDue">0</div><div class="lbl">Due Soon</div></div>
+      <div class="status-tile tile-overdue"><div class="num" id="sumOverdue">0</div><div class="lbl">Overdue</div></div>
+    </div>
+    <h4 class="summary-subhead">Spending by Category</h4>
+    <div id="summaryCats"></div>
+    <h4 class="summary-subhead" style="margin-top:20px;">Spending by Shop</h4>
+    <div id="summaryShops"></div>
+    <div class="summary-row total"><span>Total Paid</span><span id="sumTotal">₱0.00</span></div>
+    <div class="summary-footer" id="summaryFooter"></div>
+  </div>
+</div>
+
+<!-- VEHICLES MODAL -->
+<div class="modal-backdrop" id="vehiclesModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🚙 My Vehicles</h3>
+      <button class="btn-icon" onclick="closeVehicles()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="vehicle-list" id="vehicleList"></div>
+      <h4 style="margin:20px 0 8px; font-size:0.85rem; color:var(--muted); text-transform:uppercase;">Add Vehicle</h4>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input id="newVehicleName" placeholder="Vehicle name (e.g. 2018 Corolla)" style="flex:2; min-width:180px;">
+        <button class="btn-primary" onclick="addVehicle()">Add</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeVehicles()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📥 Import Data</h3>
+      <button class="btn-icon" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-top:0; font-size:0.9rem; color:var(--muted);">
+        Paste your JSON backup below, or choose a <code>.json</code> file. This will <strong>replace</strong> all vehicles.
+      </p>
+      <input type="file" id="importFile" accept=".json,application/json" onchange="loadImportFile(event)" style="margin-bottom:12px;">
+      <textarea id="importText" class="import-area" placeholder='{ "vehicles": [...] }'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeImport()">Cancel</button>
+      <button class="btn-primary" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- Multi-vehicle state ----------
+let vehicles = [];
+let currentVehicleId = null;
+let chartRange = 6;
+
+const CURRENCY = '₱';
+function fmtMoney(n) { return CURRENCY + (n || 0).toFixed(2); }
+
+// ---------- Migration from single-vehicle v2 ----------
+function loadVehicles() {
+  const stored = localStorage.getItem('vehicles');
+  if (stored) {
+    vehicles = JSON.parse(stored);
+    currentVehicleId = localStorage.getItem('currentVehicleId') || (vehicles[0] && vehicles[0].id);
+    return;
+  }
+  // Migrate from old format
+  const oldParts = JSON.parse(localStorage.getItem('parts') || '[]');
+  const oldMake = localStorage.getItem('carMake') || '';
+  const oldMileage = +localStorage.getItem('mileage') || 0;
+  const oldUnit = localStorage.getItem('unit') || 'mi';
+  if (oldParts.length || oldMake || oldMileage) {
+    const v = {
+      id: 'v_' + Date.now(),
+      name: oldMake || 'My Car',
+      mileage: oldMileage,
+      unit: oldUnit,
+      parts: oldParts
+    };
+    vehicles = [v];
+    currentVehicleId = v.id;
+    saveVehicles();
+    // Clean up old keys
+    ['parts','carMake','mileage','unit'].forEach(k => localStorage.removeItem(k));
+  } else {
+    const v = {
+      id: 'v_' + Date.now(),
+      name: '',
+      mileage: 0,
+      unit: 'mi',
+      parts: []
+    };
+    vehicles = [v];
+    currentVehicleId = v.id;
+    saveVehicles();
+  }
+}
+function saveVehicles() {
+  localStorage.setItem('vehicles', JSON.stringify(vehicles));
+  localStorage.setItem('currentVehicleId', currentVehicleId);
+}
+function getCurrentVehicle() {
+  return vehicles.find(v => v.id === currentVehicleId);
+}
+function getParts() {
+  const v = getCurrentVehicle();
+  return v ? v.parts : [];
+}
+function setParts(newParts) {
+  const v = getCurrentVehicle();
+  if (v) { v.parts = newParts; saveVehicles(); }
+}
+function getMileage() {
+  const v = getCurrentVehicle();
+  return v ? v.mileage : 0;
+}
+function setMileage(m) {
+  const v = getCurrentVehicle();
+  if (v) { v.mileage = m; saveVehicles(); }
+}
+function getUnit() {
+  const v = getCurrentVehicle();
+  return v ? v.unit : 'mi';
+}
+function setUnitVal(u) {
+  const v = getCurrentVehicle();
+  if (v) { v.unit = u; saveVehicles(); }
+}
+
+// ---------- Theme ----------
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('theme', theme);
+}
+function toggleTheme() {
+  const cur = localStorage.getItem('theme') || 'light';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+  renderCharts();
+}
+applyTheme(localStorage.getItem('theme') || 'light');
+
+// ---------- Vehicle UI ----------
+function renderVehicleSelect() {
+  const sel = document.getElementById('vehicleSelect');
+  sel.innerHTML = vehicles.map(v =>
+    `<option value="${v.id}" ${v.id === currentVehicleId ? 'selected' : ''}>${escapeHtml(v.name || 'Unnamed vehicle')}</option>`
+  ).join('');
+}
+function switchVehicle(id) {
+  currentVehicleId = id;
+  saveVehicles();
+  cancelEdit();
+  syncVehicleUI();
+  render();
+}
+function syncVehicleUI() {
+  const v = getCurrentVehicle();
+  if (!v) return;
+  document.getElementById('carMake').value = v.name || '';
+  document.getElementById('mileage').value = v.mileage || '';
+  document.getElementById('unit').value = v.unit || 'mi';
+  document.getElementById('formUnitLabel').textContent = `(${v.unit || 'mi'})`;
+  renderVehicleSelect();
+}
+
+function openVehicles() {
+  renderVehicleList();
+  document.getElementById('newVehicleName').value = '';
+  document.getElementById('vehiclesModal').classList.add('show');
+}
+function closeVehicles() { document.getElementById('vehiclesModal').classList.remove('show'); }
+function renderVehicleList() {
+  document.getElementById('vehicleList').innerHTML = vehicles.map(v => `
+    <div class="vehicle-item ${v.id === currentVehicleId ? 'active' : ''}">
+      <div class="v-info" onclick="pickVehicle('${v.id}')">
+        <div class="v-name">${escapeHtml(v.name || 'Unnamed vehicle')}</div>
+        <div class="v-meta">${v.parts.length} part${v.parts.length !== 1 ? 's' : ''} • ${(v.mileage || 0).toLocaleString()} ${v.unit || 'mi'}</div>
+      </div>
+      ${v.id === currentVehicleId ? '<span class="v-check">✓</span>' : ''}
+      ${vehicles.length > 1 ? `<button class="btn-icon" onclick="deleteVehicle('${v.id}', event)" title="Delete">🗑️</button>` : ''}
+    </div>
+  `).join('');
+}
+function pickVehicle(id) {
+  switchVehicle(id);
+  renderVehicleList();
+}
+function addVehicle() {
+  const name = document.getElementById('newVehicleName').value.trim();
+  if (!name) { alert('Please enter a name for the new vehicle'); return; }
+  const v = { id: 'v_' + Date.now(), name, mileage: 0, unit: 'mi', parts: [] };
+  vehicles.push(v);
+  currentVehicleId = v.id;
+  saveVehicles();
+  document.getElementById('newVehicleName').value = '';
+  renderVehicleList();
+  syncVehicleUI();
+  render();
+}
+function deleteVehicle(id, event) {
+  event.stopPropagation();
+  if (vehicles.length <= 1) return;
+  const v = vehicles.find(x => x.id === id);
+  if (!confirm(`Delete "${v.name || 'this vehicle'}" and all its parts?`)) return;
+  vehicles = vehicles.filter(x => x.id !== id);
+  if (currentVehicleId === id) currentVehicleId = vehicles[0].id;
+  saveVehicles();
+  renderVehicleList();
+  syncVehicleUI();
+  render();
+}
+
+// ---------- Car make (vehicle name) ----------
+document.getElementById('carMake').addEventListener('change', saveCarMake);
+function saveCarMake() {
+  const v = getCurrentVehicle();
+  if (!v) return;
+  v.name = document.getElementById('carMake').value;
+  saveVehicles();
+  renderVehicleSelect();
+}
+
+// ---------- Mileage ----------
+document.getElementById('mileage').addEventListener('change', saveMileage);
+document.getElementById('unit').addEventListener('change', saveUnit);
+function saveMileage() {
+  setMileage(+document.getElementById('mileage').value || 0);
+  render();
+}
+function saveUnit() {
+  const u = document.getElementById('unit').value;
+  setUnitVal(u);
+  document.getElementById('formUnitLabel').textContent = `(${u})`;
+  render();
+}
+
+// ---------- Quantity ----------
+function adjustQty(delta) {
+  const input = document.getElementById('quantity');
+  let v = parseInt(input.value) || 1;
+  input.value = Math.max(1, v + delta);
+}
+function validateQty() {
+  const input = document.getElementById('quantity');
+  let v = parseInt(input.value);
+  if (isNaN(v) || v < 1) v = 1;
+  input.value = v;
+}
+
+// ---------- Qty Unit ----------
+const STANDARD_UNITS = ['pcs','liters','gallons'];
+function onQtyUnitChange() {
+  const sel = document.getElementById('qtyUnit');
+  const combo = document.getElementById('qtyCombo');
+  if (sel.value === '__custom__') {
+    combo.classList.add('custom-active');
+    document.getElementById('qtyUnitCustom').focus();
+  } else {
+    combo.classList.remove('custom-active');
+    document.getElementById('qtyUnitCustom').value = '';
+  }
+}
+function getQtyUnitValue() {
+  const sel = document.getElementById('qtyUnit').value;
+  if (sel === '__custom__') return document.getElementById('qtyUnitCustom').value.trim() || 'pcs';
+  return sel;
+}
+function setQtyUnitValue(value) {
+  const sel = document.getElementById('qtyUnit');
+  const combo = document.getElementById('qtyCombo');
+  if (STANDARD_UNITS.includes(value)) {
+    sel.value = value;
+    combo.classList.remove('custom-active');
+    document.getElementById('qtyUnitCustom').value = '';
+  } else {
+    sel.value = '__custom__';
+    combo.classList.add('custom-active');
+    document.getElementById('qtyUnitCustom').value = value || '';
+  }
+}
+
+// ---------- Add / Edit Part ----------
+let editingId = null;
+
+function submitPart() {
+  const name = document.getElementById('name').value.trim();
+  if (!name) { alert('Please enter a part name'); return; }
+
+  const data = {
+    name,
+    brand: document.getElementById('brand').value.trim(),
+    category: document.getElementById('category').value,
+    quantity: Math.max(1, parseInt(document.getElementById('quantity').value) || 1),
+    qtyUnit: getQtyUnitValue(),
+    installDate: document.getElementById('instDate').value,
+    installMileage: +document.getElementById('instMileage').value || 0,
+    nextMileage: +document.getElementById('nextMileage').value || 0,
+    nextDate: document.getElementById('nextDate').value,
+    shop: document.getElementById('shop').value.trim(),
+    cost: +document.getElementById('cost').value || 0,
+  };
+
+  let parts = getParts();
+  if (editingId) {
+    const idx = parts.findIndex(p => p.id === editingId);
+    if (idx >= 0) parts[idx] = { ...parts[idx], ...data };
+    cancelEdit();
+  } else {
+    parts.push({ id: Date.now(), ...data });
+    clearForm();
+  }
+  setParts(parts);
+  render();
+}
+function clearForm() {
+  ['name','brand','instDate','instMileage','nextMileage','nextDate','shop','cost'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('quantity').value = 1;
+  document.getElementById('qtyUnit').value = 'pcs';
+  document.getElementById('qtyUnitCustom').value = '';
+  document.getElementById('qtyCombo').classList.remove('custom-active');
+}
+function startEdit(id) {
+  const p = getParts().find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('name').value = p.name || '';
+  document.getElementById('brand').value = p.brand || '';
+  document.getElementById('category').value = p.category || 'Other';
+  document.getElementById('quantity').value = p.quantity || 1;
+  setQtyUnitValue(p.qtyUnit || 'pcs');
+  document.getElementById('instDate').value = p.installDate || '';
+  document.getElementById('instMileage').value = p.installMileage || '';
+  document.getElementById('nextMileage').value = p.nextMileage || '';
+  document.getElementById('nextDate').value = p.nextDate || '';
+  document.getElementById('shop').value = p.shop || '';
+  document.getElementById('cost').value = p.cost || '';
+  document.getElementById('formTitle').textContent = '✏️ Edit Part';
+  document.getElementById('submitBtn').textContent = 'Save Changes';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  document.getElementById('partFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function cancelEdit() {
+  editingId = null;
+  clearForm();
+  document.getElementById('formTitle').textContent = '➕ Add New Part';
+  document.getElementById('submitBtn').textContent = 'Add Part';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+function delPart(id) {
+  if (!confirm('Delete this part?')) return;
+  setParts(getParts().filter(p => p.id !== id));
+  render();
+}
+
+// ---------- Status ----------
+function getStatus(p) {
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const unit = getUnit();
+  let rank = 0, labelParts = [];
+
+  if (p.nextMileage) {
+    const left = p.nextMileage - getMileage();
+    if (left < 0) { rank = Math.max(rank, 2); labelParts.push(`Overdue ${Math.abs(left).toLocaleString()}${unit}`); }
+    else if (left < 1000) { rank = Math.max(rank, 1); labelParts.push(`${left.toLocaleString()}${unit} left`); }
+  }
+  if (p.nextDate) {
+    const due = new Date(p.nextDate + 'T00:00:00');
+    const days = Math.round((due - now) / 86400000);
+    if (days < 0) { rank = Math.max(rank, 2); labelParts.push(`Overdue ${Math.abs(days)}d`); }
+    else if (days <= 30) { rank = Math.max(rank, 1); labelParts.push(`${days}d left`); }
+  }
+
+  if (rank === 0) {
+    if (p.nextMileage || p.nextDate) {
+      const left = p.nextMileage ? (p.nextMileage - getMileage()) : null;
+      if (left !== null && left < 5000) labelParts.push(`${left.toLocaleString()}${unit} left`);
+      if (p.nextDate) {
+        const days = Math.round((new Date(p.nextDate + 'T00:00:00') - now) / 86400000);
+        if (days < 90) labelParts.push(`${days}d left`);
+      }
+    }
+    return { label: labelParts.length ? 'OK · ' + labelParts.join(' · ') : 'OK', cls: 'badge-ok', rank: 0 };
+  }
+  return {
+    label: (rank === 2 ? '⚠ ' : '') + labelParts.join(' · '),
+    cls: rank === 2 ? 'badge-overdue' : 'badge-due',
+    rank
+  };
+}
+
+// ---------- Render list ----------
+function render() {
+  const unit = getUnit();
+  const search = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const stat = document.getElementById('filterStatus').value;
+  const parts = getParts();
+
+  const filtered = parts.filter(p => {
+    if (search) {
+      const hay = `${p.name} ${p.brand||''} ${p.shop||''}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    if (cat && p.category !== cat) return false;
+    if (stat) {
+      const s = getStatus(p);
+      const key = s.cls === 'badge-overdue' ? 'overdue' : s.cls === 'badge-due' ? 'due' : 'ok';
+      if (key !== stat) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    const ra = getStatus(a).rank, rb = getStatus(b).rank;
+    if (ra !== rb) return rb - ra;
+    return (a.nextMileage || Infinity) - (b.nextMileage || Infinity);
+  });
+
+  document.getElementById('list').innerHTML = filtered.map(p => {
+    const s = getStatus(p);
+    const rowCls = s.cls === 'badge-overdue' ? 'overdue' : s.cls === 'badge-due' ? 'due' : '';
+    const q = p.quantity || 1, qu = p.qtyUnit || 'pcs';
+    const nextParts = [];
+    if (p.nextMileage) nextParts.push(p.nextMileage.toLocaleString() + ' ' + unit);
+    if (p.nextDate) nextParts.push(p.nextDate);
+    return `<tr class="${rowCls}">
+      <td><div class="part-name">${escapeHtml(p.name)}</div>${p.brand ? `<div class="part-brand">${escapeHtml(p.brand)}</div>` : ''}</td>
+      <td class="hide-mobile">${p.category || '—'}</td>
+      <td class="hide-mobile"><span class="part-qty">${q} ${escapeHtml(qu)}</span></td>
+      <td>${p.installDate || '—'}${p.installMileage ? `<div class="muted" style="font-size:0.78rem;">${p.installMileage.toLocaleString()} ${unit}</div>` : ''}</td>
+      <td>${nextParts.length ? nextParts.join('<div class="muted" style="font-size:0.78rem;">') : '—'}${nextParts.length > 1 ? '</div>' : ''}</td>
+      <td class="hide-mobile"><span class="part-shop">${p.shop ? escapeHtml(p.shop) : '—'}</span></td>
+      <td>${fmtMoney(p.cost)}</td>
+      <td><span class="badge ${s.cls}">${escapeHtml(s.label)}</span></td>
+      <td><div class="row-actions">
+        <button class="btn-icon" onclick="startEdit(${p.id})" title="Edit">✏️</button>
+        <button class="btn-icon" onclick="delPart(${p.id})" title="Delete">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+  renderSummary();
+  renderCharts();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Summary ----------
+function renderSummary() {
+  const parts = getParts();
+  const total = parts.reduce((s, p) => s + (p.cost || 0), 0);
+  const byCat = {}, byShop = {};
+  parts.forEach(p => {
+    const c = p.category || 'Other';
+    byCat[c] = (byCat[c] || 0) + (p.cost || 0);
+    const sh = (p.shop || '').trim() || '—';
+    byShop[sh] = (byShop[sh] || 0) + (p.cost || 0);
+  });
+  const counts = { ok: 0, due: 0, overdue: 0 };
+  parts.forEach(p => {
+    const s = getStatus(p);
+    if (s.cls === 'badge-overdue') counts.overdue++;
+    else if (s.cls === 'badge-due') counts.due++;
+    else counts.ok++;
+  });
+  document.getElementById('sumOk').textContent = counts.ok;
+  document.getElementById('sumDue').textContent = counts.due;
+  document.getElementById('sumOverdue').textContent = counts.overdue;
+
+  const catRows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,amt]) => `
+    <div class="summary-row">
+      <span>${c} <span class="muted">(${parts.filter(p=>(p.category||'Other')===c).length} parts)</span></span>
+      <span>${fmtMoney(amt)}</span>
+    </div>`).join('');
+  document.getElementById('summaryCats').innerHTML = catRows || '<div class="muted" style="padding:6px 0;">No parts yet.</div>';
+
+  const shopRows = Object.entries(byShop).sort((a,b)=>b[1]-a[1]).map(([sh,amt]) => `
+    <div class="summary-row"><span>${escapeHtml(sh)}</span><span>${fmtMoney(amt)}</span></div>`).join('');
+  document.getElementById('summaryShops').innerHTML = shopRows || '<div class="muted" style="padding:6px 0;">No parts yet.</div>';
+
+  document.getElementById('sumTotal').textContent = fmtMoney(total);
+  document.getElementById('summaryFooter').innerHTML =
+    `Current mileage: <strong>${getMileage().toLocaleString() || 'not set'} ${getUnit()}</strong> • ` +
+    `${parts.length} part${parts.length !== 1 ? 's' : ''} tracked`;
+}
+
+// ---------- Charts ----------
+function setChartRange(range, btn) {
+  chartRange = range;
+  document.querySelectorAll('.chart-controls button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharts();
+}
+
+function renderCharts() {
+  const parts = getParts();
+  renderMonthlyChart(parts);
+  renderCategoryChart(parts);
+}
+
+function renderMonthlyChart(parts) {
+  const el = document.getElementById('monthlyChart');
+  if (!parts.length) { el.innerHTML = '<div class="chart-empty">No data yet — add some parts to see charts 📊</div>'; return; }
+
+  // Aggregate by month (YYYY-MM) using installDate
+  const byMonth = {};
+  parts.forEach(p => {
+    if (!p.installDate) return;
+    const key = p.installDate.slice(0, 7); // YYYY-MM
+    byMonth[key] = (byMonth[key] || 0) + (p.cost || 0);
+  });
+
+  // Build list of months
+  let months = [];
+  if (chartRange === 'all') {
+    months = Object.keys(byMonth).sort();
+  } else {
+    const n = parseInt(chartRange);
+    const now = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(d.toISOString().slice(0, 7));
+    }
+  }
+
+  if (!months.length) { el.innerHTML = '<div class="chart-empty">No data yet</div>'; return; }
+
+  const max = Math.max(...months.map(m => byMonth[m] || 0), 1);
+
+  const bars = months.map(m => {
+    const val = byMonth[m] || 0;
+    const pct = (val / max) * 100;
+    const [y, mo] = m.split('-');
+    const label = new Date(+y, +mo - 1, 1).toLocaleString('en', { month: 'short' });
+    return `
+      <div class="bar-col">
+        ${val > 0 ? `<div class="bar-val">${fmtMoney(val)}</div>` : ''}
+        <div class="bar" style="height:${Math.max(pct, 1)}%" title="${m}: ${fmtMoney(val)}"></div>
+        <div class="bar-label">${label}<br><span style="font-size:0.65rem;opacity:0.7">${y}</span></div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="bar-chart">${bars}</div>`;
+}
+
+function renderCategoryChart(parts) {
+  const el = document.getElementById('categoryChart');
+  if (!parts.length) { el.innerHTML = '<div class="chart-empty">No data yet</div>'; return; }
+
+  const byCat = {};
+  parts.forEach(p => {
+    const c = p.category || 'Other';
+    byCat[c] = (byCat[c] || 0) + (p.cost || 0);
+  });
+
+  const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) { el.innerHTML = '<div class="chart-empty">No data yet</div>'; return; }
+
+  const max = Math.max(...entries.map(e => e[1]), 1);
+
+  const bars = entries.map(([cat, val]) => {
+    const pct = (val / max) * 100;
+    return `
+      <div class="bar-col">
+        <div class="bar-val">${fmtMoney(val)}</div>
+        <div class="bar" style="height:${Math.max(pct, 1)}%" title="${cat}: ${fmtMoney(val)}"></div>
+        <div class="bar-label">${cat}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="bar-chart">${bars}</div>`;
+}
+
+// ---------- Export ----------
+function exportData() {
+  const data = {
+    app: 'car-parts-tracker',
+    version: 3,
+    currency: 'PHP',
+    exportedAt: new Date().toISOString(),
+    currentVehicleId,
+    vehicles
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `carparts_backup_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Import ----------
+function openImport() {
+  document.getElementById('importText').value = '';
+  document.getElementById('importFile').value = '';
+  document.getElementById('importModal').classList.add('show');
+}
+function closeImport() { document.getElementById('importModal').classList.remove('show'); }
+function loadImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById('importText').value = ev.target.result; };
+  reader.readAsText(file);
+}
+function doImport() {
+  const raw = document.getElementById('importText').value.trim();
+  if (!raw) { alert('Please paste data or choose a file first.'); return; }
+  let data;
+  try { data = JSON.parse(raw); } catch { alert('Invalid JSON.'); return; }
+
+  // Support v3 (vehicles array) and v2 (single car migration)
+  if (Array.isArray(data.vehicles)) {
+    if (!confirm('This will REPLACE all vehicles and parts. Continue?')) return;
+    vehicles = data.vehicles;
+    currentVehicleId = data.currentVehicleId || (vehicles[0] && vehicles[0].id);
+  } else if (Array.isArray(data.parts)) {
+    if (!confirm('Importing a v2 (single-vehicle) backup. This will REPLACE all data. Continue?')) return;
+    vehicles = [{
+      id: 'v_' + Date.now(),
+      name: data.carMake || 'Imported car',
+      mileage: +data.mileage || 0,
+      unit: data.unit || 'mi',
+      parts: data.parts
+    }];
+    currentVehicleId = vehicles[0].id;
+  } else {
+    alert('Invalid backup: no "vehicles" or "parts" array found.'); return;
+  }
+
+  saveVehicles();
+  syncVehicleUI();
+  render();
+  closeImport();
+  alert(`Imported ${vehicles.length} vehicle${vehicles.length !== 1 ? 's' : ''} successfully! ✅`);
+}
+
+document.getElementById('vehiclesModal').addEventListener('click', e => {
+  if (e.target.id === 'vehiclesModal') closeVehicles();
+});
+document.getElementById('importModal').addEventListener('click', e => {
+  if (e.target.id === 'importModal') closeImport();
+});
+
+// ---------- PWA Service Worker ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+  });
+}
+
+// ---------- Init ----------
+loadVehicles();
+syncVehicleUI();
+render();
+
+// Re-render charts on window resize (for responsive bar heights)
+window.addEventListener('resize', () => renderCharts());
+</script>
+</body>
+</html>
